@@ -1,10 +1,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    public bool isLose = false;
     public float camFollowSpeed = 0.15f;
     public Vector3 targetStack;
     public  Character character;
@@ -77,6 +80,11 @@ public class GameManager : MonoBehaviour
               
  
                     currentStack= StackManager.instance.StackSpawn(previousStack,isLeft);
+                    if (currentStack==null)
+                    {
+                        GameOver();
+                        yield break;
+                    }
               _coroutine=   StartCoroutine(StackManager.instance.MoveStack(currentStack,isLeft));
              currentStack.GetComponentInChildren<MeshRenderer>().material = matList[index];
              
@@ -95,6 +103,20 @@ public class GameManager : MonoBehaviour
             yield return null;
         }
     }
+
+
+    void GameOver()
+    {
+        
+       
+        StackManager.instance.StopAllCoroutines();
+
+        isLose = true;
+
+    }
+
+  
+    
     // Update is called once per frame
     
 }

@@ -12,7 +12,11 @@ public class Character : MonoBehaviour
         {
 
             transform.position=Vector3.MoveTowards(transform.position,new Vector3(GameManager.instance.targetStack.x,transform.position.y,GameManager.instance.targetStack.z),0.2f);
+           
+         
             yield return new WaitForFixedUpdate();
         }
     }
+
+  
 }

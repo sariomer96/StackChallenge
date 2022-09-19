@@ -22,7 +22,10 @@ public class StackManager : MonoBehaviour
         Vector3 previousStackScale = previousStack.localScale;
 
         Transform newStack=null;
-        
+        if (previousStackScale.x<0.15f)
+        {
+            return null;
+        }
       
         if (isLeft)
         {
@@ -69,7 +72,7 @@ public class StackManager : MonoBehaviour
             stack.position = new Vector3((stack.position.x-(distance / 2)), stack.position.y, stack.position.z);
           cuttedStack.position = new Vector3(-(-stack.position.x-(distance/2)-stack.localScale.x/2), cuttedStack.position.y, cuttedStack.position.z);
         }
-        print(isLeft);
+     
       
 
          cuttedStack.GetComponent<Rigidbody>().useGravity = true;
