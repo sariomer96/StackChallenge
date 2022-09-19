@@ -70,12 +70,7 @@ public class StackManager : MonoBehaviour
           cuttedStack.position = new Vector3(-(-stack.position.x-(distance/2)-stack.localScale.x/2), cuttedStack.position.y, cuttedStack.position.z);
         }
         print(isLeft);
-     
-
-
       
-        
-   
 
          cuttedStack.GetComponent<Rigidbody>().useGravity = true;
 
@@ -87,8 +82,18 @@ public class StackManager : MonoBehaviour
        GameManager.instance.previousStack=currentStack;
     
     }
-   
 
+    public bool GetSide(Transform prevStack,Transform currentStack)
+    {
+        bool isLeftSide = false;
+        if (prevStack.position.x-currentStack.position.x>0)
+        {
+            isLeftSide = false;
+        }else
+            isLeftSide = true;
+
+        return isLeftSide;
+    }
     public IEnumerator MoveStack(Transform stack,bool isLeft)
     {
         Rigidbody rb = stack.GetComponent<Rigidbody>();
@@ -105,5 +110,7 @@ public class StackManager : MonoBehaviour
         }
   
     }
+    
+    
     
 }

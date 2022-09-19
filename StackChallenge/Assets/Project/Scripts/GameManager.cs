@@ -39,7 +39,7 @@ public class GameManager : MonoBehaviour
         _cameraFollow = FindObjectOfType<CameraFollow>();
         character.StartCoroutine("MoveRoutine");
         targetStack = previousStack.position;
-
+          
         _cameraFollow.StartCoroutine("FollowRoutine");
         currentStack = StackManager.instance.StackSpawn(previousStack,isLeft);
          _coroutine=StartCoroutine(StackManager.instance.MoveStack(currentStack,isLeft));
@@ -51,7 +51,7 @@ public class GameManager : MonoBehaviour
         }else
             index++;
     
-         isLeft = !isLeft;
+        // isLeft = !isLeft;
 
 
         StartCoroutine("SpawnRoutine");
@@ -65,7 +65,8 @@ public class GameManager : MonoBehaviour
         {
             if (Input.GetMouseButtonDown(0))
             {
-              
+
+               isLeft= StackManager.instance.GetSide(previousStack, currentStack);
                 print("stop");
                    
                 
@@ -87,7 +88,7 @@ public class GameManager : MonoBehaviour
             
              
              
-               isLeft = !isLeft;
+           //    isLeft = !isLeft;
              
          
             }
