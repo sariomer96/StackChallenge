@@ -5,7 +5,10 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    [SerializeField] private Transform character;
+    public float camFollowSpeed = 0.15f;
+    public Vector3 targetStack;
+    public  Character character;
+    private CameraFollow _cameraFollow;
     [SerializeField] private List<Material> matList = new List<Material>();
     [SerializeField] public float stackMoveSpeed = 0.3f;
     public static GameManager instance;
@@ -31,9 +34,17 @@ public class GameManager : MonoBehaviour
    
     void StartGame()
     {
+
+        character =  FindObjectOfType<Character>();
+        _cameraFollow = FindObjectOfType<CameraFollow>();
+        character.StartCoroutine("MoveRoutine");
+        targetStack = previousStack.position;
+
+        _cameraFollow.StartCoroutine("FollowRoutine");
         currentStack = StackManager.instance.StackSpawn(previousStack,isLeft);
          _coroutine=StartCoroutine(StackManager.instance.MoveStack(currentStack,isLeft));
          currentStack.GetComponentInChildren<MeshRenderer>().material = matList[index];
+        
         if (index==matList.Count-1)
         {
             index = 0;
@@ -60,6 +71,7 @@ public class GameManager : MonoBehaviour
                 
                   StackManager.instance.CutStack(currentStack,previousStack,isLeft);
                   StackManager.instance.SetCurrentStack(currentStack);
+                  targetStack = currentStack.position;
                     StopCoroutine(_coroutine);
               
  
