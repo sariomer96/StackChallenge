@@ -23,7 +23,7 @@ public class StackManager : MonoBehaviour
         Vector3 previousStackScale = previousStack.transform.localScale;
 
         Stack newStack = null;
-        if (previousStackScale.x < 0.15f)
+        if (previousStackScale.x < 0.25f)
         {
             return null;
         }
@@ -61,6 +61,18 @@ public class StackManager : MonoBehaviour
         float distance = Vector3.Distance(previousStack.transform.position, currentStack.transform.position);
         return distance;
     }
+
+    public bool GetSideForCut(Stack prev,Stack current)
+    {
+        bool isLeftSide;
+        if (prev.transform.position.x-current.transform.position.x>=0)
+        {
+            isLeftSide= false;
+        }else
+            isLeftSide = true;
+
+        return isLeftSide;
+    }
     public void CutStack(Stack stack, Stack previousStack, bool isLeft)
     {
         print(isLeft);
@@ -73,6 +85,7 @@ public class StackManager : MonoBehaviour
         Destroy(cuttedStack.gameObject,3);
         
         cuttedStack.transform.localScale = new Vector3(distance, cuttedStack.transform.localScale.y, cuttedStack.transform.localScale.z);
+        
         
         if (!isLeft)
         {
