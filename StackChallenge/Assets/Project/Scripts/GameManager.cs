@@ -45,7 +45,8 @@ public class GameManager : MonoBehaviour
           
         _cameraFollow.StartCoroutine("FollowRoutine");
         currentStack = StackManager.instance.StackSpawn(previousStack,isLeft);
-         _coroutine=StartCoroutine(StackManager.instance.MoveStack(currentStack,isLeft));
+      //   _coroutine=StartCoroutine(StackManager.instance.MoveStack(currentStack,isLeft));
+        StackManager.instance.MoveStack(currentStack, isLeft);
          currentStack.GetComponentInChildren<MeshRenderer>().material = matList[index];
         
         if (index==matList.Count-1)
@@ -54,7 +55,7 @@ public class GameManager : MonoBehaviour
         }else
             index++;
     
-        // isLeft = !isLeft;
+      isLeft = !isLeft;
 
 
         StartCoroutine("SpawnRoutine");
@@ -76,7 +77,8 @@ public class GameManager : MonoBehaviour
                   StackManager.instance.CutStack(currentStack,previousStack,isLeft);
                   StackManager.instance.SetCurrentStack(currentStack);
                   targetStack = currentStack.position;
-                    StopCoroutine(_coroutine);
+                  currentStack.DOKill();
+                  //  StopCoroutine(_coroutine);
               
  
                     currentStack= StackManager.instance.StackSpawn(previousStack,isLeft);
@@ -85,7 +87,8 @@ public class GameManager : MonoBehaviour
                         GameOver();
                         yield break;
                     }
-              _coroutine=   StartCoroutine(StackManager.instance.MoveStack(currentStack,isLeft));
+              //_coroutine=   StartCoroutine(StackManager.instance.MoveStack(currentStack,isLeft));
+              StackManager.instance.MoveStack(currentStack, isLeft);
              currentStack.GetComponentInChildren<MeshRenderer>().material = matList[index];
              
                 if (index==matList.Count-1)
@@ -96,7 +99,7 @@ public class GameManager : MonoBehaviour
             
              
              
-           //    isLeft = !isLeft;
+              isLeft = !isLeft;
              
          
             }
