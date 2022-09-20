@@ -7,6 +7,7 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    private AudioSource _audioSource;
     [SerializeField] private Transform finishLine;
     private Vector3 _offset;
     private float camPosY;
@@ -37,12 +38,17 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        _audioSource = transform.GetComponent<AudioSource>();
         previousStack = Instantiate(stackPrefab,new Vector3(character.transform.position.x,-0.5f,character.transform.position.z),Quaternion.identity);
         StartGame();
         
     }
 
-   
+   public void PlayClip()
+    {
+        _audioSource.Play();
+        _audioSource.pitch += 0.2f;
+    }
     void StartGame()
     {
 
@@ -169,11 +175,14 @@ public class GameManager : MonoBehaviour
                 print("stop");
 
                    float distance = StackManager.instance.GetDistance(previousStack, currentStack);
-                   if (distance>2.675f)
+                   if (distance > 2.675f)
                    {
-                       bool side=StackManager.instance.GetSideForCut(previousStack, currentStack);
-                       StackManager.instance.CutStack(currentStack,previousStack,side);
+                       bool side = StackManager.instance.GetSideForCut(previousStack, currentStack);
+                       StackManager.instance.CutStack(currentStack, previousStack, side);
+                       _audioSource.pitch = 1;
                    }
+                   else
+                       PlayClip();
                  
                   StackManager.instance.SetCurrentStack(currentStack);
                   targetStack = currentStack.transform.position;

@@ -130,7 +130,7 @@ public class StackManager : MonoBehaviour
         else
             direction = -1;
    
-        stack.transform.DOMoveX(-posX,2f).SetLoops (-1, LoopType.Yoyo).SetEase(Ease.Linear).SetSpeedBased(true);
+        stack.transform.DOMoveX(-posX,GameManager.instance.stackMoveSpeed).SetLoops (-1, LoopType.Yoyo).SetEase(Ease.Linear).SetSpeedBased(true);
 
        // yield return new WaitForFixedUpdate();
         /*while (true)
