@@ -16,10 +16,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] public float stackMoveSpeed = 0.3f;
     public static GameManager instance;
     private int index = 0;
-    [SerializeField] public Transform previousStack;
+    [SerializeField] public Stack previousStack;
     public bool isLeft = false;
-    public GameObject stackPrefab;
-    private Transform currentStack=null;
+    public Stack stackPrefab;
+    private Stack currentStack=null;
     private Coroutine _coroutine=null;
     // Start is called before the first frame update
     void Awake()
@@ -41,7 +41,7 @@ public class GameManager : MonoBehaviour
         character =  FindObjectOfType<Character>();
         _cameraFollow = FindObjectOfType<CameraFollow>();
         character.StartCoroutine("MoveRoutine");
-        targetStack = previousStack.position;
+        targetStack = previousStack.transform.position;
           
         _cameraFollow.StartCoroutine("FollowRoutine");
         currentStack = StackManager.instance.StackSpawn(previousStack,isLeft);
@@ -67,17 +67,22 @@ public class GameManager : MonoBehaviour
     {
         while (true)
         {
-            if (Input.GetMouseButtonDown(0))
+                 
+            if (Input.GetMouseButtonDown(0)&&currentStack.hit)
             {
-
-               isLeft= StackManager.instance.GetSide(previousStack, currentStack);
+                currentStack.transform.DOKill();
+              
                 print("stop");
-                   
-                
-                  StackManager.instance.CutStack(currentStack,previousStack,isLeft);
+
+                   float distance = StackManager.instance.GetDistance(previousStack, currentStack);
+                   if (distance>2.675f)
+                   {
+                       StackManager.instance.CutStack(currentStack,previousStack,isLeft);
+                   }
+                 
                   StackManager.instance.SetCurrentStack(currentStack);
-                  targetStack = currentStack.position;
-                  currentStack.DOKill();
+                  targetStack = currentStack.transform.position;
+               
                   //  StopCoroutine(_coroutine);
               
  

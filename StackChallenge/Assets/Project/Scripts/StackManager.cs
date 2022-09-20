@@ -17,12 +17,12 @@ public class StackManager : MonoBehaviour
         instance = this;
     }
 
-    public Transform StackSpawn(Transform previousStack, bool isLeft)
+    public Stack StackSpawn(Stack previousStack, bool isLeft)
     {
-        Vector3 previousStackPos = previousStack.position;
-        Vector3 previousStackScale = previousStack.localScale;
+        Vector3 previousStackPos = previousStack.transform.position;
+        Vector3 previousStackScale = previousStack.transform.localScale;
 
-        Transform newStack = null;
+        Stack newStack = null;
         if (previousStackScale.x < 0.15f)
         {
             return null;
@@ -31,11 +31,11 @@ public class StackManager : MonoBehaviour
         if (isLeft)
         {
             print("LEFt");
-            newStack = Instantiate(GameManager.instance.stackPrefab.transform,
+            newStack = Instantiate(GameManager.instance.stackPrefab,
                 new Vector3(-previousStackPos.x -2.5f, -0.5f, previousStackPos.z + previousStackScale.z),
                 Quaternion.identity);
 
-            newStack.localScale = previousStack.localScale;
+            newStack.transform.localScale = previousStack.transform.localScale;
 
 
         }
@@ -43,11 +43,11 @@ public class StackManager : MonoBehaviour
         {
             
             print("RIGHRT");
-            newStack = Instantiate(GameManager.instance.stackPrefab.transform,
+            newStack = Instantiate(GameManager.instance.stackPrefab,
                 new Vector3(previousStackPos.x +2.5f, -0.5f, previousStackPos.z + previousStackScale.z),
                 Quaternion.identity);
 
-            newStack.localScale = previousStack.localScale;
+            newStack.transform.localScale = previousStack.transform.localScale;
 
         }
 
@@ -56,29 +56,36 @@ public class StackManager : MonoBehaviour
 
     }
 
-    public void CutStack(Transform stack, Transform previousStack, bool isLeft)
+    public float GetDistance(Stack previousStack, Stack currentStack)
+    {
+        float distance = Vector3.Distance(previousStack.transform.position, currentStack.transform.position);
+        return distance;
+    }
+    public void CutStack(Stack stack, Stack previousStack, bool isLeft)
     {
         print(isLeft);
         
-        float distance = Vector2.Distance(previousStack.position, stack.position);
+        float distance = Vector2.Distance(previousStack.transform.position, stack.transform.position);
         print("dis" + distance);
-        stack.localScale =
-            new Vector3(Mathf.Abs(distance - stack.localScale.x), stack.localScale.y, stack.localScale.z);
-        Transform cuttedStack = Instantiate(stack);
-        cuttedStack.localScale = new Vector3(distance, cuttedStack.localScale.y, cuttedStack.localScale.z);
+        stack.transform.localScale =
+            new Vector3(Mathf.Abs(distance - stack.transform.localScale.x), stack.transform.localScale.y, stack.transform.localScale.z);
+        Stack cuttedStack = Instantiate(stack);
+        Destroy(cuttedStack.gameObject,3);
+        
+        cuttedStack.transform.localScale = new Vector3(distance, cuttedStack.transform.localScale.y, cuttedStack.transform.localScale.z);
         
         if (!isLeft)
         {
-            stack.position = new Vector3((stack.position.x + (distance / 2)), stack.position.y, stack.position.z);
-            cuttedStack.position = new Vector3((stack.position.x - (distance / 2) - stack.localScale.x / 2),
-                cuttedStack.position.y, cuttedStack.position.z);
+            stack.transform.position = new Vector3(( stack.transform.position.x + (distance / 2)),  stack.transform.position.y,  stack.transform.position.z);
+            cuttedStack.transform.position = new Vector3(( stack.transform.position.x - (distance / 2) -  stack.transform.localScale.x / 2),
+                cuttedStack.transform.position.y, cuttedStack.transform.position.z);
 
         }
         else
         {
-            stack.position = new Vector3((stack.position.x - (distance / 2)), stack.position.y, stack.position.z);
-            cuttedStack.position = new Vector3(-(-stack.position.x - (distance / 2) - stack.localScale.x / 2),
-                cuttedStack.position.y, cuttedStack.position.z);
+            stack.transform.position = new Vector3(( stack.transform.position.x - (distance / 2)),  stack.transform.position.y,  stack.transform.position.z);
+            cuttedStack.transform.position = new Vector3(-(- stack.transform.position.x - (distance / 2) -  stack.transform.localScale.x / 2),
+                cuttedStack.transform.position.y, cuttedStack.transform.position.z);
         }
 
 
@@ -88,29 +95,18 @@ public class StackManager : MonoBehaviour
     }
 
 
-    public void SetCurrentStack(Transform currentStack)
+    public void SetCurrentStack(Stack currentStack)
     {
         GameManager.instance.previousStack = currentStack;
 
     }
 
-    public bool GetSide(Transform prevStack, Transform currentStack)
-    {
-        bool isLeftSide = false;
-        if (prevStack.position.x - currentStack.position.x > 0)
-        {
-            isLeftSide = false;
-        }
-        else
-            isLeftSide = true;
+ 
 
-        return isLeftSide;
-    }
-
-    public void MoveStack(Transform stack, bool isLeft)
+    public void MoveStack(Stack stack, bool isLeft)
     {
         Rigidbody rb = stack.GetComponent<Rigidbody>();
-        float posX = stack.position.x;
+        float posX = stack.transform.position.x;
         int direction = 1;
 
         if (isLeft)
@@ -118,7 +114,7 @@ public class StackManager : MonoBehaviour
         else
             direction = -1;
    
-        stack.DOMoveX(-posX,2f).SetLoops (-1, LoopType.Yoyo).SetEase(Ease.Linear).SetSpeedBased(true);
+        stack.transform.DOMoveX(-posX,2f).SetLoops (-1, LoopType.Yoyo).SetEase(Ease.Linear).SetSpeedBased(true);
 
        // yield return new WaitForFixedUpdate();
         /*while (true)
