@@ -7,6 +7,9 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    public float toleranceRate = 2.675f;
+    public float characterMoveSpeed = 0.2f;
+    public float stackPosRangeX = 2.5f;
     private AudioSource _audioSource;
     [SerializeField] private Transform finishLine;
     private Vector3 _offset;
@@ -35,11 +38,9 @@ public class GameManager : MonoBehaviour
         instance = this;
     }
 
-
     private void Start()
     {
-        _audioSource = transform.GetComponent<AudioSource>();
-        previousStack = Instantiate(stackPrefab,new Vector3(character.transform.position.x,-0.5f,character.transform.position.z),Quaternion.identity);
+      
         StartGame();
         
     }
@@ -52,7 +53,8 @@ public class GameManager : MonoBehaviour
     void StartGame()
     {
 
-        
+        _audioSource = transform.GetComponent<AudioSource>();
+        previousStack = Instantiate(stackPrefab,new Vector3(character.transform.position.x,-0.5f,character.transform.position.z),Quaternion.identity);
         character =  FindObjectOfType<Character>();
         _cameraFollow = FindObjectOfType<CameraFollow>();
         
@@ -60,21 +62,17 @@ public class GameManager : MonoBehaviour
         camRotation = _cameraFollow.transform.rotation;
         camPosY = _cameraFollow.transform.position.y;
         character.StartCoroutine("MoveRoutine");
+        
         targetStack = previousStack.transform.position;
           
         _cameraFollow.StartCoroutine("FollowRoutine");
         currentStack = StackManager.instance.StackSpawn(previousStack,isLeft);
-      //   _coroutine=StartCoroutine(StackManager.instance.MoveStack(currentStack,isLeft));
-        StackManager.instance.MoveStack(currentStack, isLeft);
-         currentStack.GetComponentInChildren<MeshRenderer>().material = matList[index];
+  
+        StackManager.instance.MoveStack(currentStack);
+        currentStack.GetComponentInChildren<MeshRenderer>().material = matList[index];
         
-        if (index==matList.Count-1)
-        {
-            index = 0;
-        }else
-            index++;
-    
-      isLeft = !isLeft;
+        SetMaterialIndex(matList.Count);
+        isLeft = !isLeft;
 
 
         StartCoroutine("SpawnRoutine");
@@ -94,17 +92,18 @@ public class GameManager : MonoBehaviour
     {
       
         Vector3 finishPos = new Vector3(finishLine.transform.position.x, -0.5f,finishLine.transform.position.z);
-      Stack firstStack=  Instantiate(stackPrefab, finishPos +new Vector3(0,0,finishLine.transform.localScale.z * 2) ,
-             
-            Quaternion.identity);
+      Stack firstStack=  Instantiate(stackPrefab, finishPos +new Vector3(0,0,finishLine.transform.localScale.z * 2),Quaternion.identity);
+      
       previousStack = firstStack;
+      
       Vector3 target = new Vector3(previousStack.transform.position.x, character.transform.position.y,
           previousStack.transform.position.z);
+      
      yield return character.transform.DOMove(target, 0.5f).WaitForCompletion();
      win = false;
      currentStack = StackManager.instance.StackSpawn(previousStack,isLeft);
-     //   _coroutine=StartCoroutine(StackManager.instance.MoveStack(currentStack,isLeft));
-      StackManager.instance.MoveStack(currentStack, isLeft);
+      
+      StackManager.instance.MoveStack(currentStack);
       StartCoroutine("SpawnRoutine");
       targetStack = firstStack.transform.position;
       character.StartCoroutine("MoveRoutine");
@@ -116,10 +115,10 @@ public class GameManager : MonoBehaviour
     }
    public IEnumerator CamBackToPlayer()
     {
-        
         StopCoroutine("WinRoutine");
+        
         _cameraFollow.StopAllCoroutines();
-      
+        
         character.transform.GetComponentInChildren<Animator>().CrossFade("Run",0.3f);
         
         _cameraFollow.transform.DORotate(camRotation.eulerAngles, 1f);
@@ -127,8 +126,6 @@ public class GameManager : MonoBehaviour
        yield return _cameraFollow.transform.DOMove(new Vector3(_offset.x+character.transform.position.x,camPosY,_offset.z+character.transform.position.z), 0.8f).WaitForCompletion();
        _cameraFollow.StartCoroutine("FollowRoutine");
        
-     
-     
     }
     void StopSpawn()
     {
@@ -168,16 +165,13 @@ public class GameManager : MonoBehaviour
         {
                  
             if (Input.GetMouseButtonDown(0)&&currentStack.hit)
-            {
-          
+            { 
                 currentStack.transform.DOKill();
-              
-                print("stop");
-
-                   float distance = StackManager.instance.GetDistance(previousStack, currentStack);
-                   if (distance > 2.675f)
+                
+                float distance = StackManager.instance.GetDistance(previousStack, currentStack);
+                   if (distance >toleranceRate )
                    {
-                       bool side = StackManager.instance.GetSideForCut(previousStack, currentStack);
+                       bool side = StackManager.instance.GetSideForCutStack(previousStack, currentStack);
                        StackManager.instance.CutStack(currentStack, previousStack, side);
                        _audioSource.pitch = 1;
                    }
@@ -195,62 +189,40 @@ public class GameManager : MonoBehaviour
                         
                     }
             
-              StackManager.instance.MoveStack(currentStack, isLeft);
+              StackManager.instance.MoveStack(currentStack);
              currentStack.GetComponentInChildren<MeshRenderer>().material = matList[index];
-             
-                if (index==matList.Count-1)
-                {
-                    index = 0;
-                }else
-                    index++;
-            
-             
+             SetMaterialIndex(matList.Count);
              
               isLeft = !isLeft;
              
-         
             }
             yield return null;
         }
     }
 
-
-    IEnumerator GameOver()
+    void SetMaterialIndex(int matListCount)
     {
-        
-       
-        StackManager.instance.StopAllCoroutines(); 
-        //character.StopCoroutine("MoveRoutine");
-        while (true)
-        {
-            float distance = Vector3.Distance(character.transform.position, previousStack.transform.position);
+        if (index==matListCount-1)
          
-            if (distance==0)
-            {
-                character.StopCoroutine("MoveRoutine");
-              KillCharacter();
-                yield break;
-            }
-
-            yield return new WaitForFixedUpdate();
-        }
-      
-        isLose = true;
-
+            index = 0;
+         else
+            index++;
     }
+  
 
 
     IEnumerator KillCharacter()
     {
         Vector3 target = new Vector3(previousStack.transform.position.x, 0, character.transform.position.z+previousStack.transform.localScale.z*1.57f);
-        print("kill");
+     
         while (true)
         {
             yield return new WaitForFixedUpdate();
             float distance = Vector3.Distance(character.transform.position, target);
             if (distance<0.1f)
             {
-                Rigidbody rb = character.AddComponent<Rigidbody>();
+                Rigidbody rb = character.GetComponent<Rigidbody>();
+                rb.constraints = RigidbodyConstraints.None;
                 rb.AddForce(Vector3.forward*100);
                 _cameraFollow.StopAllCoroutines();
                 Destroy(character.gameObject,5f);
@@ -260,7 +232,7 @@ public class GameManager : MonoBehaviour
              
                 yield break;
             }
-             character.transform.position=Vector3.MoveTowards(character.transform.position,target,0.1f);
+             character.transform.position=Vector3.MoveTowards(character.transform.position,target,characterMoveSpeed);
             
         }
       
