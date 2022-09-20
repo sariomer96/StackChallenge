@@ -23,8 +23,10 @@ public class StackManager : MonoBehaviour
         Vector3 previousStackScale = previousStack.transform.localScale;
 
         Stack newStack = null;
-        if (previousStackScale.x < 0.25f)
+        if (previousStackScale.x < 0.25f||GameManager.instance.win)
         {
+           print("null");   
+           print(GameManager.instance.win+"AAAA  "+previousStackScale.x);
             return null;
         }
 
@@ -82,6 +84,7 @@ public class StackManager : MonoBehaviour
         stack.transform.localScale =
             new Vector3(Mathf.Abs(distance - stack.transform.localScale.x), stack.transform.localScale.y, stack.transform.localScale.z);
         Stack cuttedStack = Instantiate(stack);
+        cuttedStack.transform.GetComponentInChildren<Collider>().enabled = false;
         Destroy(cuttedStack.gameObject,3);
         
         cuttedStack.transform.localScale = new Vector3(distance, cuttedStack.transform.localScale.y, cuttedStack.transform.localScale.z);

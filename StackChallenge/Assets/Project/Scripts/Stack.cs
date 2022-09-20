@@ -10,12 +10,21 @@ public class Stack : MonoBehaviour
 
     private void OnCollisionEnter(Collision other)
     {
-        print(other.gameObject.name);
-        hit = true;
+   
+       
+        print((other.transform.gameObject.layer+"aaaa "+LayerMask.GetMask("finish")));
+        if (other.transform.gameObject.layer==LayerMask.NameToLayer("finish"))
+        {
+            GameManager.instance.win = true;
+            other.transform.GetComponentInChildren<Collider>().enabled = false;
+        }else
+            hit = true;
     }
     private void OnCollisionExit(Collision other)
     {
         print(other.gameObject.name);
         hit = false;
     }
+
+  
 }

@@ -14,12 +14,17 @@ public class UIManager : MonoBehaviour
     {
         instance = this;
     }
-    public void WinBtn()
+    public void WinBtnActivate()
     {
         next.SetActive(true);
     }
-    
-   
+    public void WinBtnDeactivate()
+    {
+        next.SetActive(false);
+    }
+
+
+ 
     public void LoseBtn()
     {
         retry.SetActive(true);
