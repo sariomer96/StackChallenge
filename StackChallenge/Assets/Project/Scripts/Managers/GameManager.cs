@@ -7,39 +7,39 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-
-    public bool isMoveCharacter = false;
-    public float toleranceRate = 2.675f;
     public float characterMoveSpeed = 0.2f;
-    public float stackPosRangeX = 2.5f;
-    private AudioSource _audioSource;
-    [SerializeField] private Transform finishLine;
-    private Vector3 _offset;
-    private float camPosY;
-    private Quaternion camRotation;
-    public bool win = false;
-    public List<Stack> stackList = new List<Stack>();
-    public bool isLose = false;
-    public bool isLeftCutSide = false;
     public float camFollowSpeed = 0.15f;
+    public float stackMoveSpeed = 0.3f;  // cube move speed  between left - right  
+    public List<Stack> stackList = new List<Stack>(); // stacklist holds cubes
+    public float toleranceRate = 2.675f;  // toleranceRate is a "perfect state" tolerance
+    public float stackPosRangeX = 2.5f;
+    public bool isMoveCharacter = false;
+    public bool win = false;
+    public bool isLeftCutSide = false;
     public Vector3 targetStack;
     public  Character character;
-    private CameraFollow _cameraFollow;
-    [SerializeField] private List<Material> matList = new List<Material>();
-    public float stackMoveSpeed = 0.3f;
-    [SerializeField] private float stackSpeedRate = 0.05f;
     public static GameManager instance;
-    private int index = 0;
-    [SerializeField] public Stack previousStack;
+    public Stack previousStack;
     public bool isLeft = false;
     public Stack stackPrefab;
-    private Stack currentStack=null;
-    private Coroutine _coroutine=null;
+   
+  
+    [SerializeField] float stackSpeedRate = 0.05f;  //  when perfect,  increase to stackspeed
+    [SerializeField] List<Material> matList = new List<Material>(); // matList holds all cube materials
     public string state = "IdleRoutine";
     private Animator characterAnim;
     private float baseStackSpeed;
     private bool isWinAnim = false;
     private Vector3 fallTargetPos;
+    private AudioSource _audioSource;
+    private Vector3 _offset;
+    private Stack currentStack=null;
+    private float camPosY;
+    private int materialIndex = 0; 
+    private CameraFollow _cameraFollow;
+    [SerializeField] private Transform finishLine;
+    private Quaternion camRotation;
+    private float stackPosY=-0.5f; // stack  position.y always starts -0.5f 
     // Start is called before the first frame update
     void Awake()
     {
@@ -48,9 +48,7 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-      
         StartGame();
-        
     }
 
    public void PlayClip()
@@ -63,7 +61,7 @@ public class GameManager : MonoBehaviour
         characterAnim = character.transform.GetComponentInChildren<Animator>();
          baseStackSpeed = stackMoveSpeed;
         _audioSource = transform.GetComponent<AudioSource>();
-        previousStack = Instantiate(stackPrefab,new Vector3(character.transform.position.x,-0.5f,character.transform.position.z),Quaternion.identity);
+        previousStack = Instantiate(stackPrefab,new Vector3(character.transform.position.x,stackPosY,character.transform.position.z),Quaternion.identity);
         character =  FindObjectOfType<Character>();
         _cameraFollow = FindObjectOfType<CameraFollow>();
         
@@ -78,7 +76,7 @@ public class GameManager : MonoBehaviour
         currentStack = StackManager.instance.StackSpawn(previousStack,isLeft);
   
         StackManager.instance.MoveStack(currentStack);
-        currentStack.GetComponentInChildren<MeshRenderer>().material = matList[index];
+        currentStack.GetComponentInChildren<MeshRenderer>().material = matList[materialIndex];
         
         SetMaterialIndex(matList.Count);
         isLeft = !isLeft;
@@ -99,45 +97,28 @@ public class GameManager : MonoBehaviour
             {
                  distance = Vector3.Distance(character.transform.position, fallTargetPos);
             }
-           
             
            if(isMoveCharacter )
+             ChangeState("RunRoutine");
+           else if(distance<0.1f&&!currentStack)
             {
-                //Player has moved
-              
-                ChangeState("RunRoutine");
-              
-            }
-            else if(distance<0.1f&&!currentStack)
-            {
-                // dead 
-              
                 ChangeState("DeadRoutine");
                 yield break;
             }
            else if(isWinAnim&&!currentStack)
-           { 
                ChangeState("WinAnimRoutine");
-           } 
-           else 
-           {
-              
-               print("IDLEUST");
+           else
                ChangeState("IdleRoutine");
-           }
-          
-        
-          
+           
            yield return  null;
         }
     }
 
     IEnumerator IdleRoutine()
     { 
-        print(state);
+        
         if (state=="IdleRoutine")
         {
-            print("IDLE");
             RegisterAnimation("Idle");
             yield return null;
         }
@@ -146,27 +127,23 @@ public class GameManager : MonoBehaviour
     }
     
     IEnumerator DeadRoutine()
-    { print(state);
+    { 
         if (state=="DeadRoutine")
         {
-            
             RegisterAnimation("Falling");
             yield return null;
         }
-
         StartCoroutine(state);
     }
 
     IEnumerator RunRoutine()
     {
-        print(state);
+        
         if (state=="RunRoutine")
         {
-            print("RUN");
             RegisterAnimation("Run");
             yield return null;
         }
-
         StartCoroutine(state);
     }
     string currentAnimation;
@@ -175,18 +152,15 @@ public class GameManager : MonoBehaviour
         if (value == currentAnimation)
             return;
         currentAnimation = value;
-        print("PLAY ANIM");
         characterAnim.Play(currentAnimation);
     }
     IEnumerator WinAnimRoutine()
     {
-        print(state);
         if (state=="WinAnimRoutine")
         {
             RegisterAnimation("dance");
             yield return null;
         }
-
         StartCoroutine(state);
     }
     
@@ -199,19 +173,25 @@ public class GameManager : MonoBehaviour
     }
     public void OnClickWin()
     {
-        stackMoveSpeed = baseStackSpeed;
-         UIManager.instance.WinBtnDeactivate();
+        stackMoveSpeed = baseStackSpeed; 
+        UIManager.instance.WinBtnDeactivate();
        
         StartCoroutine("CamBackToPlayer");
-        StartCoroutine("SpawnOnFinishLine");
+        StartCoroutine("StartNewLevel");
         
     }
-
-    IEnumerator SpawnOnFinishLine()
+    void MoveFinishLine()
     {
-      
-        Vector3 finishPos = new Vector3(finishLine.transform.position.x, -0.5f,finishLine.transform.position.z);
-      Stack firstStack=  Instantiate(stackPrefab, finishPos +new Vector3(0,0,finishLine.transform.localScale.z * 2),Quaternion.identity);
+        finishLine.transform.GetComponentInChildren<Collider>().enabled = true;
+        finishLine.transform.position = 
+        new Vector3(finishLine.transform.position.x, finishLine.transform.position.y, 
+      finishLine.transform.position.z+finishLine.transform.localScale.z*1.5f +stackPrefab.transform.localScale.z*10f);
+    }
+    IEnumerator StartNewLevel()
+    { 
+      Vector3 finishPos = new Vector3(finishLine.transform.position.x, stackPosY,finishLine.transform.position.z);  
+      Stack firstStack=  Instantiate(stackPrefab, 
+          finishPos +new Vector3(0,0,finishLine.transform.localScale.z * 2),Quaternion.identity);
       
       previousStack = firstStack;
       
@@ -228,34 +208,24 @@ public class GameManager : MonoBehaviour
       targetStack = firstStack.transform.position;
       character.StartCoroutine("MoveRoutine");
       yield return new WaitForSeconds(1);
-      finishLine.transform.GetComponentInChildren<Collider>().enabled = true;
-      finishLine.transform.position = new Vector3(finishLine.transform.position.x, finishLine.transform.position.y,
-          finishLine.transform.position.z+finishLine.transform.localScale.z*1.5f +stackPrefab.transform.localScale.z*10f);
+      MoveFinishLine();
 
     }
-   public IEnumerator CamBackToPlayer()
+   public IEnumerator CamBackToPlayer()  
     {
         StopCoroutine("WinRoutine");
-        
         _cameraFollow.StopAllCoroutines();
-        
-       // character.transform.GetComponentInChildren<Animator>().CrossFade("Run",0.3f);
-        
         _cameraFollow.transform.DORotate(camRotation.eulerAngles, 1f);
         
        yield return _cameraFollow.transform.DOMove(new Vector3(_offset.x+character.transform.position.x,camPosY,_offset.z+character.transform.position.z), 0.8f).WaitForCompletion();
        _cameraFollow.StartCoroutine("FollowRoutine");
-       
     }
     void StopSpawn()
     {
-         print("aa");
          character.StopCoroutine("MoveRoutine");
-         if (win)
-         {
-             print("YOU WIN");
-             StartCoroutine("WinRoutine");
-         }else
+        if (win) 
+         StartCoroutine("WinRoutine");
+        else
          StartCoroutine("KillCharacter");
     }
 
@@ -264,28 +234,21 @@ public class GameManager : MonoBehaviour
         
         yield return  character.transform.DOMove(finishLine.transform.position, 0.5f).WaitForCompletion();
         isWinAnim = true;
-       // character.transform.GetComponentInChildren<Animator>().Play("dance");
         _cameraFollow.StopAllCoroutines();
-        print("WIN");
         yield return   
                 _cameraFollow.transform.DOMove(_cameraFollow.transform.position + new Vector3(0, 2f, -2f), 1f)
             .WaitForCompletion();
-           
         UIManager.instance.WinBtnActivate();
         while (true)
         {
-            print("ROTATE");
             _cameraFollow.transform.RotateAround(character.transform.position,new Vector3(0,1,0),0.5f);
             yield return new WaitForFixedUpdate();
         }
-        
-        
     }
     IEnumerator SpawnRoutine()
     {
         while (true)
         {
-                 
             if (Input.GetMouseButtonDown(0)&&currentStack.hit)
             { 
                 currentStack.transform.DOKill();
@@ -302,10 +265,8 @@ public class GameManager : MonoBehaviour
                        PlayClip();  // PERFECT!
                        stackMoveSpeed += stackSpeedRate;
                    }
-                    
-                 
-                  StackManager.instance.SetCurrentStack(currentStack);
-                  targetStack = currentStack.transform.position;
+                   StackManager.instance.SetCurrentStack(currentStack);
+                   targetStack = currentStack.transform.position;
                
                     currentStack= StackManager.instance.StackSpawn(previousStack,isLeft);
                     if (currentStack==null)
@@ -314,13 +275,12 @@ public class GameManager : MonoBehaviour
                         yield   break;
                         
                     }
-            
-              StackManager.instance.MoveStack(currentStack);
-             currentStack.GetComponentInChildren<MeshRenderer>().material = matList[index];
+                    
+             StackManager.instance.MoveStack(currentStack);
+             currentStack.GetComponentInChildren<MeshRenderer>().material = matList[materialIndex];
              SetMaterialIndex(matList.Count);
              
               isLeft = !isLeft;
-             
             }
             yield return null;
         }
@@ -328,15 +288,12 @@ public class GameManager : MonoBehaviour
 
     void SetMaterialIndex(int matListCount)
     {
-        if (index==matListCount-1)
-         
-            index = 0;
+        if (materialIndex==matListCount-1)
+            materialIndex = 0;
          else
-            index++;
+            materialIndex++;
     }
   
-
-
     IEnumerator KillCharacter()
     {
         Vector3 target = new Vector3(previousStack.transform.position.x, 0, character.transform.position.z+previousStack.transform.localScale.z*1.6f);
@@ -347,15 +304,14 @@ public class GameManager : MonoBehaviour
             float distance = Vector3.Distance(character.transform.position, target);
             if (distance<0.1f)
             {
-                isMoveCharacter = false;
-                    Rigidbody rb = character.GetComponent<Rigidbody>();
+              isMoveCharacter = false; 
+              Rigidbody rb = character.GetComponent<Rigidbody>();
               rb.constraints = RigidbodyConstraints.None;
               rb.AddForce(Vector3.forward*100);
               _cameraFollow.StopAllCoroutines();
          
               Destroy(character.gameObject,5f);
               
-           
               yield return new WaitForSeconds(0.4f);
               UIManager.instance.LoseBtn();
 
@@ -365,16 +321,10 @@ public class GameManager : MonoBehaviour
             isMoveCharacter = true;
             character.transform.position=Vector3.MoveTowards(character.transform.position,target,characterMoveSpeed);
         }
- 
-    
-            
+      
     }
       
-        
     }
-
-  
-    
-    // Update is called once per frame
+ 
     
 
