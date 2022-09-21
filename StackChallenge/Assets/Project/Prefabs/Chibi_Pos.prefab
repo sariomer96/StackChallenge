@@ -47,6 +47,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be2ecafbf75589a4aa3b8c04b70e69f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  lastPos: {x: 0, y: 0, z: 0}
 --- !u!135 &9146072370430049994
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -83,6 +84,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 4489370875834616823}
     m_Modifications:
+    - target: {fileID: 1782327572533206788, guid: 8ebf841af362818409cf000d8f1a2345, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4978699718255468484, guid: 8ebf841af362818409cf000d8f1a2345, type: 3}
       propertyPath: m_Name
       value: Chibi

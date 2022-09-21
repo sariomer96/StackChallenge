@@ -6,14 +6,29 @@ using UnityEngine;
 public class Character : MonoBehaviour
 {
     // Start is called before the first frame update
-
+    public Vector3 lastPos;
     IEnumerator MoveRoutine()
     {
+    
         while (true)
         {
-            transform.position=Vector3.MoveTowards(transform.position,new Vector3(GameManager.instance.targetStack.x,transform.position.y,GameManager.instance.targetStack.z),GameManager.instance.characterMoveSpeed);
+           
+   
+         transform.position = Vector3.MoveTowards(transform.position,
+             new Vector3(GameManager.instance.targetStack.x, transform.position.y, GameManager.instance.targetStack.z),
+             GameManager.instance.characterMoveSpeed);
+         if (transform.position !=lastPos)
+         {
+             GameManager.instance.isMoveCharacter = true;
+         }else
+             GameManager.instance.isMoveCharacter = false;
+
+         lastPos = transform.position;
+         yield return new WaitForFixedUpdate();
+        
             
-            yield return new WaitForFixedUpdate();
+          
+
         }
     }
 

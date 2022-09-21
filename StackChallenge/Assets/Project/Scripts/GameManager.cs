@@ -7,6 +7,8 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+
+    public bool isMoveCharacter = false;
     public float toleranceRate = 2.675f;
     public float characterMoveSpeed = 0.2f;
     public float stackPosRangeX = 2.5f;
@@ -24,7 +26,8 @@ public class GameManager : MonoBehaviour
     public  Character character;
     private CameraFollow _cameraFollow;
     [SerializeField] private List<Material> matList = new List<Material>();
-    [SerializeField] public float stackMoveSpeed = 0.3f;
+    public float stackMoveSpeed = 0.3f;
+    [SerializeField] private float stackSpeedRate = 0.05f;
     public static GameManager instance;
     private int index = 0;
     [SerializeField] public Stack previousStack;
@@ -32,6 +35,11 @@ public class GameManager : MonoBehaviour
     public Stack stackPrefab;
     private Stack currentStack=null;
     private Coroutine _coroutine=null;
+    public string state = "IdleRoutine";
+    private Animator characterAnim;
+    private float baseStackSpeed;
+    private bool isWinAnim = false;
+    private Vector3 fallTargetPos;
     // Start is called before the first frame update
     void Awake()
     {
@@ -52,7 +60,8 @@ public class GameManager : MonoBehaviour
     }
     void StartGame()
     {
-
+        characterAnim = character.transform.GetComponentInChildren<Animator>();
+         baseStackSpeed = stackMoveSpeed;
         _audioSource = transform.GetComponent<AudioSource>();
         previousStack = Instantiate(stackPrefab,new Vector3(character.transform.position.x,-0.5f,character.transform.position.z),Quaternion.identity);
         character =  FindObjectOfType<Character>();
@@ -76,11 +85,121 @@ public class GameManager : MonoBehaviour
 
 
         StartCoroutine("SpawnRoutine");
-  
+      
+        StartCoroutine("DecisionRoutine");
+        StartCoroutine(state);
+    }
+    
+    public  IEnumerator DecisionRoutine()
+    {
+        float distance=0;
+        while (true)
+        {
+            if (character)
+            {
+                 distance = Vector3.Distance(character.transform.position, fallTargetPos);
+            }
+           
+            
+           if(isMoveCharacter )
+            {
+                //Player has moved
+              
+                ChangeState("RunRoutine");
+              
+            }
+            else if(distance<0.1f&&!currentStack)
+            {
+                // dead 
+              
+                ChangeState("DeadRoutine");
+                yield break;
+            }
+           else if(isWinAnim&&!currentStack)
+           { 
+               ChangeState("WinAnimRoutine");
+           } 
+           else 
+           {
+              
+               print("IDLEUST");
+               ChangeState("IdleRoutine");
+           }
+          
+        
+          
+           yield return  null;
+        }
     }
 
+    IEnumerator IdleRoutine()
+    { 
+        print(state);
+        if (state=="IdleRoutine")
+        {
+            print("IDLE");
+            RegisterAnimation("Idle");
+            yield return null;
+        }
+
+        StartCoroutine(state);
+    }
+    
+    IEnumerator DeadRoutine()
+    { print(state);
+        if (state=="DeadRoutine")
+        {
+            
+            RegisterAnimation("Falling");
+            yield return null;
+        }
+
+        StartCoroutine(state);
+    }
+
+    IEnumerator RunRoutine()
+    {
+        print(state);
+        if (state=="RunRoutine")
+        {
+            print("RUN");
+            RegisterAnimation("Run");
+            yield return null;
+        }
+
+        StartCoroutine(state);
+    }
+    string currentAnimation;
+    public void RegisterAnimation(string value)
+    {
+        if (value == currentAnimation)
+            return;
+        currentAnimation = value;
+        print("PLAY ANIM");
+        characterAnim.Play(currentAnimation);
+    }
+    IEnumerator WinAnimRoutine()
+    {
+        print(state);
+        if (state=="WinAnimRoutine")
+        {
+            RegisterAnimation("dance");
+            yield return null;
+        }
+
+        StartCoroutine(state);
+    }
+    
+    
+    public void ChangeState(string value)
+    {
+        if (state == value)
+            return;
+        state = value;
+    }
     public void OnClickWin()
     {
+        stackMoveSpeed = baseStackSpeed;
          UIManager.instance.WinBtnDeactivate();
        
         StartCoroutine("CamBackToPlayer");
@@ -101,6 +220,7 @@ public class GameManager : MonoBehaviour
       
      yield return character.transform.DOMove(target, 0.5f).WaitForCompletion();
      win = false;
+     isWinAnim = false;
      currentStack = StackManager.instance.StackSpawn(previousStack,isLeft);
       
       StackManager.instance.MoveStack(currentStack);
@@ -119,7 +239,7 @@ public class GameManager : MonoBehaviour
         
         _cameraFollow.StopAllCoroutines();
         
-        character.transform.GetComponentInChildren<Animator>().CrossFade("Run",0.3f);
+       // character.transform.GetComponentInChildren<Animator>().CrossFade("Run",0.3f);
         
         _cameraFollow.transform.DORotate(camRotation.eulerAngles, 1f);
         
@@ -143,12 +263,14 @@ public class GameManager : MonoBehaviour
     {
         
         yield return  character.transform.DOMove(finishLine.transform.position, 0.5f).WaitForCompletion();
-        character.transform.GetComponentInChildren<Animator>().Play("dance");
+        isWinAnim = true;
+       // character.transform.GetComponentInChildren<Animator>().Play("dance");
         _cameraFollow.StopAllCoroutines();
         print("WIN");
         yield return   
                 _cameraFollow.transform.DOMove(_cameraFollow.transform.position + new Vector3(0, 2f, -2f), 1f)
             .WaitForCompletion();
+           
         UIManager.instance.WinBtnActivate();
         while (true)
         {
@@ -176,7 +298,11 @@ public class GameManager : MonoBehaviour
                        _audioSource.pitch = 1;
                    }
                    else
-                       PlayClip();
+                   {
+                       PlayClip();  // PERFECT!
+                       stackMoveSpeed += stackSpeedRate;
+                   }
+                    
                  
                   StackManager.instance.SetCurrentStack(currentStack);
                   targetStack = currentStack.transform.position;
@@ -213,28 +339,36 @@ public class GameManager : MonoBehaviour
 
     IEnumerator KillCharacter()
     {
-        Vector3 target = new Vector3(previousStack.transform.position.x, 0, character.transform.position.z+previousStack.transform.localScale.z*1.57f);
-     
+        Vector3 target = new Vector3(previousStack.transform.position.x, 0, character.transform.position.z+previousStack.transform.localScale.z*1.6f);
+        fallTargetPos = target;
         while (true)
         {
             yield return new WaitForFixedUpdate();
             float distance = Vector3.Distance(character.transform.position, target);
             if (distance<0.1f)
             {
-                Rigidbody rb = character.GetComponent<Rigidbody>();
-                rb.constraints = RigidbodyConstraints.None;
-                rb.AddForce(Vector3.forward*100);
-                _cameraFollow.StopAllCoroutines();
-                Destroy(character.gameObject,5f);
-                character.GetComponentInChildren<Animator>().Play("Falling");
-                yield return new WaitForSeconds(0.4f);
-                UIManager.instance.LoseBtn();
-             
-                yield break;
+                isMoveCharacter = false;
+                    Rigidbody rb = character.GetComponent<Rigidbody>();
+              rb.constraints = RigidbodyConstraints.None;
+              rb.AddForce(Vector3.forward*100);
+              _cameraFollow.StopAllCoroutines();
+         
+              Destroy(character.gameObject,5f);
+              
+           
+              yield return new WaitForSeconds(0.4f);
+              UIManager.instance.LoseBtn();
+
+             yield break;
             }
-             character.transform.position=Vector3.MoveTowards(character.transform.position,target,characterMoveSpeed);
-            
+
+            isMoveCharacter = true;
+            character.transform.position=Vector3.MoveTowards(character.transform.position,target,characterMoveSpeed);
         }
+ 
+    
+            
+    }
       
         
     }
@@ -243,4 +377,4 @@ public class GameManager : MonoBehaviour
     
     // Update is called once per frame
     
-}
+
